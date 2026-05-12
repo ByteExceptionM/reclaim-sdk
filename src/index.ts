@@ -49,6 +49,15 @@ export {
 } from "./resources/task.js";
 export { DailyHabit, type DailyHabitInit } from "./resources/habit.js";
 export {
+  SmartHabit,
+  type SmartHabitInit,
+  type SmartHabitSeries,
+  type SmartHabitRecurrence,
+  type SmartHabitAttendee,
+  type SmartHabitTimezone,
+  type SmartHabitPeriod,
+} from "./resources/smart-habit.js";
+export {
   Hours,
   type HoursInit,
   type Interval,

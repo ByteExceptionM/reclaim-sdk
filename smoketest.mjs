@@ -14,6 +14,7 @@ import {
   ReclaimClient,
   RecordNotFound,
   SignatureVerificationError,
+  SmartHabit,
   SnoozeOption,
   Task,
   TaskSource,
@@ -134,6 +135,17 @@ assert(!Object.keys(wire).some(k => k.startsWith("_")), "toApiData omits _ keys"
 assert(wire.timeChunksRequired === 12, "toApiData includes chunk field");
 assert(wire.title === "x", "toApiData preserves field values");
 
+// Regression guard: id flows from accessor into toApiData output.
+const tWithId = new Task({ id: 42, title: "z" });
+assert(tWithId.toApiData().id === 42, "toApiData re-emits id from accessor");
+const tNoId = new Task({ title: "z" });
+assert(tNoId.toApiData().id === undefined, "toApiData omits id when unset");
+
+// Hours uses string ids — verify the accessor's generic still works.
+const hr2 = new Hours({ id: "abc-123" });
+assert(hr2.id === "abc-123", "Hours string id round-trips through accessor");
+assert(hr2.toApiData().id === "abc-123", "Hours toApiData emits string id");
+
 // DailyHabit defaults
 const h = new DailyHabit({ title: "morning routine" });
 assert(h.eventCategory === EventCategory.PERSONAL, "Habit default eventCategory=PERSONAL");
@@ -203,6 +215,40 @@ assert(Task.ENDPOINT === "/api/tasks", "Task.ENDPOINT");
 assert(DailyHabit.ENDPOINT === "/api/assist/habits/daily", "DailyHabit.ENDPOINT");
 assert(Hours.ENDPOINT === "/api/timeschemes", "Hours.ENDPOINT");
 assert(Webhook.ENDPOINT === "/api/team/current/webhooks", "Webhook.ENDPOINT");
+assert(SmartHabit.ENDPOINT === "/api/smart-habits", "SmartHabit.ENDPOINT");
+
+// SmartHabit: id alias to lineageId, activeSeries pass-throughs
+const sh = new SmartHabit({
+  lineageId: 12345,
+  status: "ACTIVE",
+  enabled: true,
+  activeSeries: {
+    id: 42,
+    title: "Morning standup",
+    idealTime: "09:00:00",
+    durationMinMins: 15,
+    durationMaxMins: 15,
+    recurrence: { frequency: "WEEKLY", idealDays: ["MONDAY"], interval: 1 },
+  },
+});
+assert(sh.lineageId === 12345, "SmartHabit lineageId set");
+assert(sh.id === 12345, "SmartHabit id alias → lineageId");
+assert(sh.title === "Morning standup", "SmartHabit title pass-through");
+assert(sh.idealTime === "09:00:00", "SmartHabit idealTime pass-through");
+assert(sh.durationMaxMins === 15, "SmartHabit durationMaxMins pass-through");
+assert(sh.recurrence?.frequency === "WEEKLY", "SmartHabit recurrence pass-through");
+sh.id = 99999;
+assert(sh.lineageId === 99999, "SmartHabit id setter writes lineageId");
+
+// SmartHabit: id and lineageId stay in sync when both are passed in.
+const sh2 = new SmartHabit({ id: 5, lineageId: 5 });
+assert(sh2.id === sh2.lineageId, "SmartHabit id/lineageId co-assignment stays in sync");
+
+// Same id accessor works on the inherited base for Task
+const t3 = new Task({ id: 777, title: "id-via-base" });
+assert(t3.id === 777, "Task id via base accessor");
+t3.id = 999;
+assert(t3.id === 999, "Task id setter via base accessor");
 
 if (fails > 0) {
   console.error(`\n${fails} assertion(s) failed`);
