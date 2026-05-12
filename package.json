@@ -1,6 +1,6 @@
 {
   "name": "reclaim-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unofficial Node.js SDK for the Reclaim.ai API — tasks, habits, hours, webhooks, changelog.",
   "keywords": [
     "reclaim",

@@ -18,6 +18,7 @@ Requires Node 20 or newer. Zero runtime dependencies (uses the built-in `fetch` 
 - [Configuration](#configuration)
 - [Tasks](#tasks)
 - [Daily habits](#daily-habits)
+- [Smart habits](#smart-habits)
 - [Hours / time schemes](#hours--time-schemes)
 - [Changelog feed](#changelog-feed)
 - [Webhooks](#webhooks)
@@ -194,6 +195,46 @@ const examples = await DailyHabit.listTemplates({ role: "engineer" });
 ```
 
 > Creating habits directly via API frequently returns 409 (calendar collisions, plan-tier limits). In practice, create habits in the web app and manage them — toggle / reschedule / skip — through the SDK.
+
+> **`DailyHabit` is the legacy model.** Accounts onboarded since the smart-series rollout use [Smart habits](#smart-habits) instead — `DailyHabit.list()` will return `[]` on those accounts. Both models can coexist; check both if you maintain a tool that supports older and newer accounts.
+
+---
+
+## Smart habits
+
+The newer recurring-block model that superseded `DailyHabit`. A smart habit is a **lineage** that wraps one current configuration (`activeSeries`) plus the lineage's history (`series`) and scheduling windows (`periods`).
+
+```ts
+import { SmartHabit } from "reclaim-sdk";
+
+for (const h of await SmartHabit.list()) {
+  const s = h.activeSeries;
+  console.log(
+    h.lineageId,
+    `[${h.status}] enabled=${h.enabled}`,
+    `${s?.durationMaxMins ?? "?"}min @ ${s?.idealTime ?? "—"}`,
+    s?.title ?? "(untitled)",
+  );
+}
+
+// Fetch one by lineageId:
+const one = await SmartHabit.get(3932412);
+console.log(one.title, one.recurrence?.frequency, one.recurrence?.idealDays);
+```
+
+Convenience accessors on the lineage proxy directly to the current series:
+
+| Lineage accessor   | Resolves to                       |
+| ------------------ | --------------------------------- |
+| `title`            | `activeSeries.title`              |
+| `idealTime`        | `activeSeries.idealTime`          |
+| `durationMinMins`  | `activeSeries.durationMinMins`    |
+| `durationMaxMins`  | `activeSeries.durationMaxMins`    |
+| `recurrence`       | `activeSeries.recurrence`         |
+
+The `id` getter is aliased to `lineageId` so generic `BaseResource` machinery (`get(id)`, `refresh()`, etc.) works uniformly across resources.
+
+> **Read-only for now.** This release ships the typed reader. Write operations (create / update / pause / skip-series / planner actions) are exposed under `/api/smart-habits/*` but their semantics haven't been verified yet — they will land in a later version. Open an issue if you need a specific operation sooner.
 
 ---
 
@@ -376,11 +417,12 @@ Every `ReclaimAPIError` carries `.status` (the HTTP status code) and `.body` (th
 | --------------------- | ---------------------------------------------------------------------------------------------------- |
 | Tasks                 | CRUD, batch ops, planner actions (start/stop/snooze/plan-work/log-work/complete/add-time/reindex/…) |
 | Daily habits          | CRUD, toggle, reschedule / skip events, templates, smart-series migration                            |
+| Smart habits          | Read-only list / get (typed lineage + activeSeries + recurrence). Write ops planned                   |
 | Hours / time schemes  | Full CRUD, custom `dayHours` policies, features, target calendars                                    |
 | Webhooks              | CRUD subscriptions, typed payloads, HMAC-SHA256 signature verification                                |
 | Changelog             | All feeds (tasks, events, smart habits, smart meetings, scheduling links, full feed)                 |
 
-Not yet covered — open a PR if you need them: Events, Calendars, Scheduling Links, One-on-Ones, Analytics, Focus Settings, Integrations, API-key management, Admin / delegated access.
+Not yet covered — open a PR if you need them: Smart meetings, Events, Calendars, Scheduling Links, One-on-Ones, Analytics, Focus Settings, Integrations, API-key management, Admin / delegated access.
 
 ---
 
@@ -411,7 +453,9 @@ function buildTask(overrides: TaskInit): Task {
 const subscribedEvents: WebhookEventName[] = ["task.created", "habit.deleted"];
 ```
 
-Available: `TaskInit`, `DailyHabitInit`, `HoursInit`, `WebhookInit`, `WebhookEventName`.
+Available: `TaskInit`, `DailyHabitInit`, `HoursInit`, `WebhookInit`, `SmartHabitInit`, `WebhookEventName`.
+
+For smart habits the nested shape also ships as separate interfaces — `SmartHabitSeries`, `SmartHabitRecurrence`, `SmartHabitAttendee`, `SmartHabitTimezone`, `SmartHabitPeriod` — usable when you build helpers around the resource.
 
 ---
 

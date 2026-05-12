@@ -83,13 +83,32 @@ export abstract class BaseResource<TId = number | string> {
   /** If true, list/get auto-inject the current user's id as `?user=` param. */
   public static readonly USER_PARAM_REQUIRED: boolean = false;
 
-  /** Unique identifier — undefined until the resource is persisted. */
-  declare public id?: TId;
   declare public created?: string;
   declare public updated?: string;
 
+  /** @internal — backing storage for the {@link BaseResource.id} accessor. */
+  protected _id?: TId;
+
   /** @internal */
   protected _client: ReclaimClient;
+
+  /**
+   * Unique identifier — `undefined` until the resource is persisted.
+   *
+   * Exposed via an accessor so resources with a non-`id` primary key
+   * (e.g. {@link SmartHabit}'s `lineageId`) can re-alias it without
+   * fighting the type system.
+   *
+   * Subclasses overriding this must use `get id()` / `set id()` syntax —
+   * never a `declare public id` field or a plain field declaration — or the
+   * prototype accessor will be clobbered under `useDefineForClassFields: true`.
+   */
+  public get id(): TId | undefined {
+    return this._id;
+  }
+  public set id(value: TId | undefined) {
+    this._id = value;
+  }
 
   constructor(data: JsonObject = {}, options: ResourceOptions = {}) {
     if (options.client) {
@@ -126,6 +145,9 @@ export abstract class BaseResource<TId = number | string> {
   /**
    * Build the JSON payload sent to the API. Skips undefined values and
    * underscore-prefixed internal fields. Override to customise serialisation.
+   *
+   * `id` is sourced from the accessor (not enumerable on the instance) so it
+   * is re-emitted explicitly when set.
    */
   public toApiData(): JsonObject {
     const self = this as unknown as JsonObject;
@@ -136,6 +158,7 @@ export abstract class BaseResource<TId = number | string> {
       if (value === undefined) continue;
       out[key] = value;
     }
+    if (this.id !== undefined) out["id"] = this.id;
     return out;
   }
 

@@ -3,6 +3,8 @@ dist/
 *.log
 *.tgz
 *.tsbuildinfo
+test-*.mjs
+test-*.cjs
 .DS_Store
 .env
 .env.local
