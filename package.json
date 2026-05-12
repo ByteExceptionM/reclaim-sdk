@@ -1,0 +1,61 @@
+{
+  "name": "reclaim-sdk",
+  "version": "0.1.0",
+  "description": "Unofficial Node.js SDK for the Reclaim.ai API — tasks, habits, hours, webhooks, changelog.",
+  "keywords": [
+    "reclaim",
+    "reclaim.ai",
+    "reclaim-ai",
+    "sdk",
+    "api",
+    "tasks",
+    "habits",
+    "calendar",
+    "scheduling",
+    "productivity"
+  ],
+  "author": "masel.io",
+  "license": "MIT",
+  "homepage": "https://github.com/ByteExceptionM/reclaim-sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ByteExceptionM/reclaim-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ByteExceptionM/reclaim-sdk/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build:js && npm run build:types",
+    "build:js": "tsup",
+    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "rimraf": "^6.1.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  }
+}

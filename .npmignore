@@ -1,0 +1,12 @@
+src/
+examples/
+tests/
+_source/
+.github/
+.gitignore
+tsconfig.json
+tsup.config.ts
+smoketest.mjs
+smoketest.cjs
+*.log
+node_modules/
