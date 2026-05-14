@@ -35,6 +35,11 @@
       "require": "./dist/index.cjs"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  },
   "sideEffects": false,
   "files": [
     "dist",
